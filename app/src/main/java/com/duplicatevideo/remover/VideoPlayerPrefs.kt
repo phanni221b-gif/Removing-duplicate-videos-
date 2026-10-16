@@ -67,7 +67,10 @@ object VideoPlayerPrefs {
         }
 
         try {
-            context.startActivity(Intent.createChooser(baseIntent, "동영상 재생 앱 선택"))
+            // Android가 선택한 기본 비디오 앱을 그대로 사용합니다.
+            // 기본 앱이 아직 없다면 시스템 선택창이 표시되며, 사용자가
+            // '항상'으로 선택한 연결 앱은 이후에도 유지됩니다.
+            context.startActivity(baseIntent)
         } catch (_: ActivityNotFoundException) {
             // 재생 가능한 앱이 없는 경우 호출 측 UI가 그대로 유지됩니다.
         }
