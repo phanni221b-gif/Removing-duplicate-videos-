@@ -36,6 +36,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -144,6 +145,7 @@ class MainActivity : ComponentActivity() {
 internal fun DuplicateVideoApp() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val resultsListState = rememberLazyListState()
 
     var screen by remember { mutableStateOf(Screen.HOME) }
     var criterion by remember { mutableStateOf(MatchCriterion.RECOMMENDED) }
@@ -253,6 +255,7 @@ internal fun DuplicateVideoApp() {
                 }
             )
             Screen.RESULTS -> ResultsScreen(
+                listState = resultsListState,
                 criterion = criterion,
                 groups = groups,
                 selectedCount = selectedItems.size,
