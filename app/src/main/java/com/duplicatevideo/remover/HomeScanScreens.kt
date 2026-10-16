@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -81,9 +80,7 @@ internal fun HomeScreen(
                 Image(
                     painter = painterResource(id = R.drawable.ic_launcher),
                     contentDescription = null,
-                    modifier = Modifier
-                        .size(52.dp)
-                        .clip(RoundedCornerShape(14.dp))
+                    modifier = Modifier.size(52.dp).clip(RoundedCornerShape(14.dp))
                 )
                 Spacer(Modifier.width(12.dp))
                 Column {
@@ -110,15 +107,9 @@ internal fun HomeScreen(
                 Card(
                     colors = CardDefaults.cardColors(containerColor = background),
                     shape = RoundedCornerShape(22.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(164.dp)
-                        .clickable { onCriterion(criterion) }
+                    modifier = Modifier.fillMaxWidth().height(164.dp).clickable { onCriterion(criterion) }
                 ) {
-                    Column(
-                        modifier = Modifier.padding(18.dp),
-                        verticalArrangement = Arrangement.SpaceBetween
-                    ) {
+                    Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.SpaceBetween) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -165,18 +156,13 @@ internal fun ScanScreen(
         topBar = {
             TopAppBar(
                 title = { Text("중복 동영상 검색 중") },
-                navigationIcon = {
-                    IconButton(onClick = onCancel) { Icon(Icons.Outlined.ArrowBack, contentDescription = "뒤로") }
-                },
+                navigationIcon = { IconButton(onClick = onCancel) { Icon(Icons.Outlined.ArrowBack, contentDescription = "뒤로") } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = AppBackground)
             )
         }
     ) { padding ->
         Column(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-                .padding(24.dp),
+            modifier = Modifier.padding(padding).fillMaxSize().padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(Modifier.height(44.dp))
@@ -210,19 +196,12 @@ internal fun ScanScreen(
                     Spacer(Modifier.height(14.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("분석 진행", color = SubtleText)
-                        Text(
-                            if (progress.total > 0) "${progress.processed} / ${progress.total}" else "준비 중",
-                            fontWeight = FontWeight.SemiBold
-                        )
+                        Text(if (progress.total > 0) "${progress.processed} / ${progress.total}" else "준비 중", fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
             Spacer(Modifier.weight(1f))
-            Text(
-                "영상 수가 많거나 해시·썸네일 비교를 선택하면 시간이 더 걸릴 수 있습니다.",
-                fontSize = 12.sp,
-                color = SubtleText
-            )
+            Text("영상 수가 많거나 해시·썸네일 비교를 선택하면 시간이 더 걸릴 수 있습니다.", fontSize = 12.sp, color = SubtleText)
             Spacer(Modifier.height(18.dp))
             Button(
                 onClick = onCancel,
