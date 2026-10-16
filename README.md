@@ -1,3 +1,41 @@
 # 중복동영상제거
 
-Android app for finding and removing duplicate videos from shared storage.
+Android 기기의 공유 저장소에서 중복 동영상을 찾아 비교하고, 사용자가 직접 선택한 파일만 Android 시스템 삭제 확인을 거쳐 영구 삭제하는 앱입니다.
+
+## 검색 기준
+
+- **같은 길이**: 표시되는 초 단위 재생 시간이 같은 영상
+- **같은 크기**: 파일 바이트 크기가 정확히 같은 영상
+- **비슷한 이름**: 확장자를 제외한 파일명에서 **연속된 6글자**가 하나라도 같은 영상
+- **같은 썸네일**: Android가 생성한 대표 장면의 dHash가 같은 영상
+- **같은 해시값**: SHA-256 파일 해시가 같은 영상 (정확한 중복)
+- **추천 조합**: 같은 재생시간 + (같은 크기 / 비슷한 이름 / 같은 썸네일 중 하나 이상)
+
+## 주요 기능
+
+- 별도 확장자 선택 없이 Android MediaStore가 동영상으로 인식한 모든 형식 자동 검색
+- 그룹별 썸네일, 파일명, 용량, 재생시간, 해상도, 경로 표시
+- 그룹 안의 영상을 탭하면 외부 비디오 플레이어로 재생
+- 설정에서 연결할 비디오 플레이어 앱 지정 가능
+- 여러 그룹에서 삭제할 영상을 선택한 뒤 한 번에 영구 삭제
+- Android 11+의 `MediaStore.createDeleteRequest()`를 사용해 시스템 최종 확인 후 삭제
+- 기기 시스템 글꼴 사용, 커스텀 폰트 미포함
+
+## 권한
+
+- Android 13 이상: `READ_MEDIA_VIDEO`
+- Android 11~12: `READ_EXTERNAL_STORAGE`
+
+> 이 앱은 `MANAGE_EXTERNAL_STORAGE`(모든 파일 접근 권한)를 사용하지 않습니다. 따라서 Android MediaStore에 등록되지 않은 특수/비표준 파일은 검색되지 않을 수 있습니다.
+
+## 빌드
+
+저장소의 **Actions → Android Build**에서 실행하거나 `main` 브랜치에 push하면 Debug APK가 artifact로 생성됩니다.
+
+로컬 빌드 예시:
+
+```bash
+gradle :app:assembleDebug
+```
+
+최소 지원 버전: Android 11 (API 30)
