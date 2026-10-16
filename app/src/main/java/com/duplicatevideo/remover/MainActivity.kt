@@ -5,104 +5,39 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.provider.Settings
-import android.util.Size
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.ChevronRight
-import androidx.compose.material.icons.outlined.DeleteForever
-import androidx.compose.material.icons.outlined.Description
-import androidx.compose.material.icons.outlined.Image
-import androidx.compose.material.icons.outlined.Movie
-import androidx.compose.material.icons.outlined.PlayCircleOutline
-import androidx.compose.material.icons.outlined.Schedule
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.Tag
-import androidx.compose.material.icons.outlined.TextFields
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.Locale
 
 internal val AppBackground = Color(0xFFF8F9FC)
 internal val AppSurface = Color(0xFFFFFFFF)
@@ -185,6 +120,12 @@ internal fun DuplicateVideoApp() {
         }
     }
 
+    fun leaveGroup() {
+        selectedUris = emptySet()
+        selectedGroup = null
+        screen = Screen.RESULTS
+    }
+
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -205,7 +146,7 @@ internal fun DuplicateVideoApp() {
             val deletedSet = deleted.map { it.uri }.toSet()
             deletedCount = deleted.size
             deletedBytes = deleted.sumOf { it.sizeBytes }
-            selectedUris = selectedUris - deletedSet
+            selectedUris = emptySet()
             groups = groups.mapNotNull { group ->
                 val remaining = group.items.filterNot { it.uri in deletedSet }
                 if (remaining.size > 1) group.copy(items = remaining) else null
@@ -214,6 +155,32 @@ internal fun DuplicateVideoApp() {
             screen = Screen.DONE
         }
         pendingDeleteItems = emptyList()
+    }
+
+    fun launchDeleteRequest(items: List<VideoItem>) {
+        if (items.isEmpty()) return
+        runCatching {
+            pendingDeleteItems = items
+            val request = MediaStore.createDeleteRequest(
+                context.contentResolver,
+                items.map { it.uri }
+            )
+            deleteLauncher.launch(IntentSenderRequest.Builder(request.intentSender).build())
+        }.onFailure {
+            pendingDeleteItems = emptyList()
+        }
+    }
+
+    val manageMediaLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) {
+        val items = pendingDeleteItems
+        if (items.isNotEmpty()) {
+            // Android 12+에서 미디어 관리 권한을 허용했다면 이후 삭제 요청은
+            // 시스템의 파일별 승인창 없이 처리됩니다. 허용하지 않았더라도
+            // 기존 방식의 삭제 확인창으로 계속 진행할 수 있습니다.
+            launchDeleteRequest(items)
+        }
     }
 
     fun askToScan(selected: MatchCriterion) {
@@ -227,26 +194,31 @@ internal fun DuplicateVideoApp() {
 
     fun requestPermanentDeletion(items: List<VideoItem>) {
         if (items.isEmpty()) return
-        runCatching {
-            val request = MediaStore.createDeleteRequest(
-                context.contentResolver,
-                items.map { it.uri }
-            )
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !MediaStore.canManageMedia(context)) {
             pendingDeleteItems = items
-            deleteLauncher.launch(IntentSenderRequest.Builder(request.intentSender).build())
+            val intent = Intent(Settings.ACTION_REQUEST_MANAGE_MEDIA).apply {
+                data = Uri.parse("package:${context.packageName}")
+            }
+            runCatching {
+                manageMediaLauncher.launch(intent)
+            }.onFailure {
+                launchDeleteRequest(items)
+            }
+        } else {
+            launchDeleteRequest(items)
         }
     }
 
     val selectedItems = remember(groups, selectedUris) {
-        groups.flatMap { it.items }.filter { it.uri in selectedUris }.distinctBy { it.uri }
+        groups.flatMap { it.items }
+            .filter { it.uri in selectedUris }
+            .distinctBy { it.uri }
     }
 
     BackHandler(enabled = screen != Screen.HOME) {
         when (screen) {
-            Screen.GROUP -> {
-                selectedGroup = null
-                screen = Screen.RESULTS
-            }
+            Screen.GROUP -> leaveGroup()
             Screen.RESULTS -> screen = Screen.HOME
             Screen.SCANNING -> {
                 scanJob?.cancel()
@@ -265,6 +237,7 @@ internal fun DuplicateVideoApp() {
                 onCriterion = ::askToScan,
                 onSettings = { screen = Screen.SETTINGS }
             )
+
             Screen.SCANNING -> ScanScreen(
                 criterion = criterion,
                 progress = progress,
@@ -273,6 +246,7 @@ internal fun DuplicateVideoApp() {
                     screen = Screen.HOME
                 }
             )
+
             Screen.RESULTS -> ResultsScreen(
                 listState = resultsListState,
                 criterion = criterion,
@@ -281,43 +255,55 @@ internal fun DuplicateVideoApp() {
                 selectedBytes = selectedItems.sumOf { it.sizeBytes },
                 onBack = { screen = Screen.HOME },
                 onOpenGroup = {
+                    // 선택 상태는 그룹 내부에서만 유지합니다.
+                    selectedUris = emptySet()
                     selectedGroup = it
                     screen = Screen.GROUP
                 },
                 onDeleteSelected = { showDeleteConfirm = true },
                 onSettings = { screen = Screen.SETTINGS }
             )
+
             Screen.GROUP -> {
                 val group = selectedGroup
                 if (group == null) {
+                    selectedUris = emptySet()
                     screen = Screen.RESULTS
                 } else {
                     GroupDetailScreen(
                         group = group,
                         selectedUris = selectedUris,
-                        onBack = {
-                            selectedGroup = null
-                            screen = Screen.RESULTS
-                        },
+                        onBack = ::leaveGroup,
                         onToggle = { uri ->
-                            selectedUris = if (uri in selectedUris) selectedUris - uri else selectedUris + uri
+                            selectedUris = if (uri in selectedUris) {
+                                selectedUris - uri
+                            } else {
+                                selectedUris + uri
+                            }
                         },
                         onSelectAll = { shouldSelect ->
                             val groupUris = group.items.map { it.uri }.toSet()
-                            selectedUris = if (shouldSelect) selectedUris + groupUris else selectedUris - groupUris
+                            selectedUris = if (shouldSelect) {
+                                selectedUris + groupUris
+                            } else {
+                                selectedUris - groupUris
+                            }
                         },
                         onPlay = { VideoPlayerPrefs.openVideo(context, it.uri) },
                         onDeleteSelected = { showDeleteConfirm = true }
                     )
                 }
             }
+
             Screen.SETTINGS -> SettingsScreen(
                 onBack = { screen = Screen.HOME },
                 onPlayerSettings = { screen = Screen.PLAYER_PICKER }
             )
+
             Screen.PLAYER_PICKER -> PlayerPickerScreen(
                 onBack = { screen = Screen.SETTINGS }
             )
+
             Screen.DONE -> DeleteDoneScreen(
                 count = deletedCount,
                 bytes = deletedBytes,
@@ -360,5 +346,18 @@ internal fun DuplicateVideoApp() {
                 TextButton(onClick = { showPermissionDialog = false }) { Text("취소") }
             }
         )
+    }
+}
+
+internal fun hasVideoPermission(context: Context): Boolean {
+    val permission = requiredVideoPermission()
+    return ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+}
+
+internal fun requiredVideoPermission(): String {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        Manifest.permission.READ_MEDIA_VIDEO
+    } else {
+        Manifest.permission.READ_EXTERNAL_STORAGE
     }
 }
