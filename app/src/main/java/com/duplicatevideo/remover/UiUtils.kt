@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -56,7 +55,7 @@ internal fun DeleteDoneScreen(
         Spacer(Modifier.height(24.dp))
         Text("파일이 삭제되었습니다", fontSize = 24.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(10.dp))
-        Text("$count개의 파일 · ${formatBytes(bytes)} 공간 확보", color = SubtleText)
+        Text("${count}개의 파일 · ${formatBytes(bytes)} 공간 확보", color = SubtleText)
         Spacer(Modifier.weight(1f))
         Button(
             onClick = onSeeResults,
