@@ -13,6 +13,7 @@ import android.provider.MediaStore
 import android.provider.Settings
 import android.util.Size
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.IntentSenderRequest
@@ -240,6 +241,24 @@ internal fun DuplicateVideoApp() {
         groups.flatMap { it.items }.filter { it.uri in selectedUris }.distinctBy { it.uri }
     }
 
+    BackHandler(enabled = screen != Screen.HOME) {
+        when (screen) {
+            Screen.GROUP -> {
+                selectedGroup = null
+                screen = Screen.RESULTS
+            }
+            Screen.RESULTS -> screen = Screen.HOME
+            Screen.SCANNING -> {
+                scanJob?.cancel()
+                screen = Screen.HOME
+            }
+            Screen.SETTINGS -> screen = Screen.HOME
+            Screen.PLAYER_PICKER -> screen = Screen.SETTINGS
+            Screen.DONE -> screen = Screen.RESULTS
+            Screen.HOME -> Unit
+        }
+    }
+
     Surface(modifier = Modifier.fillMaxSize(), color = AppBackground) {
         when (screen) {
             Screen.HOME -> HomeScreen(
@@ -276,7 +295,10 @@ internal fun DuplicateVideoApp() {
                     GroupDetailScreen(
                         group = group,
                         selectedUris = selectedUris,
-                        onBack = { screen = Screen.RESULTS },
+                        onBack = {
+                            selectedGroup = null
+                            screen = Screen.RESULTS
+                        },
                         onToggle = { uri ->
                             selectedUris = if (uri in selectedUris) selectedUris - uri else selectedUris + uri
                         },
