@@ -255,7 +255,6 @@ internal fun DuplicateVideoApp() {
                 selectedBytes = selectedItems.sumOf { it.sizeBytes },
                 onBack = { screen = Screen.HOME },
                 onOpenGroup = {
-                    // 선택 상태는 그룹 내부에서만 유지합니다.
                     selectedUris = emptySet()
                     selectedGroup = it
                     screen = Screen.GROUP
@@ -346,18 +345,5 @@ internal fun DuplicateVideoApp() {
                 TextButton(onClick = { showPermissionDialog = false }) { Text("취소") }
             }
         )
-    }
-}
-
-internal fun hasVideoPermission(context: Context): Boolean {
-    val permission = requiredVideoPermission()
-    return ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
-}
-
-internal fun requiredVideoPermission(): String {
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        Manifest.permission.READ_MEDIA_VIDEO
-    } else {
-        Manifest.permission.READ_EXTERNAL_STORAGE
     }
 }
